@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="xxposed">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=BJCree:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <title>XXposure</title>
+</head>
+<body>
+  <!-- OPENING SCREEN -->
+  <section id="intro-screen">
+    <div class="intro-text">
+      <h1 class="title">
+        <span class="icon-letter"></span><span>posure</span>
+      </h1>
+      <p>
+        Welcome to a digital interaction with a found arhcive of glass plate and film photographs. Watch the way that your surroundings interact with their transparencies to compose new exposures. 
+      </p>
+      <p class="tap-text">Tap to begin</p>
+    </div>
+    <div class="marquee-wrapper">
+      <div class="marquee marquee-left" id="marquee-left"></div>
+      <div class="marquee marquee-right" id="marquee-right"></div>
+    </div>
+  </section>
+
+  <!-- CAMERA / OVERLAY APP -->
+  <main id="camera-app">
+    <video id="camera" autoplay playsinline muted></video>
+
+    <img
+      id="glass-overlay"
+      src="photos/1.png"
+      alt="Transparent glass plate overlay"
+    />
+
+    <div id="controls">
+      <button id="prev-plate" class="arrow-button left-arrow">‹</button>
+      <button id="next-plate" class="arrow-button right-arrow">›</button>
+      <button id="capture-photo" aria-label="Capture photo or record video"></button>
+      <button id="gallery-button" aria-label="Open gallery">
+        <span class="icon-letter"></span>
+      </button>
+    </div>
+
+<div id="gallery-overlay">
+  <div class="gallery-header">
+    <span class="icon-letter"></span>
+    <span class="gallery-title">gallery</span>
+  </div>
+
+  <button id="close-gallery">×</button>
+  <div id="gallery-grid"></div>
+
+  <div id="gallery-preview">
+    <img id="gallery-preview-img" src="">
+  </div>
+</div>
+
+  </main>
+
+  <script src="script.js"></script>
+  
+</body>
+</html>
