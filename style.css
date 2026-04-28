@@ -169,12 +169,12 @@ p.tap-text  {
 /* vertical positions */
 .marquee-left {
   top: 25%;
-  animation: scroll-left 90s linear infinite;
+  animation: scroll-left 60s linear infinite;
 }
 
 .marquee-right {
   top: 45%;
-  animation: scroll-right 90s linear infinite;
+  animation: scroll-right 60s linear infinite;
 }
 
 /* animations */
@@ -304,7 +304,7 @@ button {
 #gallery-button {
   position: absolute;
   left: 50%;
-  top: -95vh;
+  top: -90vh;
   transform: translateX(-50%);
   z-index: 25;
   width: 100vw;
