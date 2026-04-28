@@ -28,6 +28,8 @@
   box-sizing: border-box;
 }
 
+
+
 html,
 body {
   margin: 0;
@@ -40,6 +42,13 @@ body {
 
 button {
   font-family: "BJCree", serif;
+}
+
+button,
+.gallery-item,
+#gallery-preview {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #gallery-button {

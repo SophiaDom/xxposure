@@ -1,3 +1,4 @@
+// ---------- ELEMENTS ----------
 const introScreen = document.getElementById("intro-screen");
 const cameraApp = document.getElementById("camera-app");
 const video = document.getElementById("camera");
@@ -13,34 +14,79 @@ const galleryGrid = document.getElementById("gallery-grid");
 const galleryPreview = document.getElementById("gallery-preview");
 const galleryPreviewImg = document.getElementById("gallery-preview-img");
 
-let clickTimer = null;
-let previewIndex = null;
+// ---------- HELPER (MOBILE SAFE TAP) ----------
+function onTap(el, cb) {
+  el.addEventListener("pointerup", (e) => {
+    e.preventDefault();
+    cb(e);
+  });
+}
 
-galleryButton.addEventListener("click", () => {
-  buildGallery();
-  galleryOverlay.classList.add("open");
-});
-
-closeGallery.addEventListener("click", () => {
-  galleryOverlay.classList.remove("open");
-});
-
-let pressTimer;
-let isRecording = false;
-let mediaRecorder;
-let recordedChunks = [];
-
-
-/* ---------- IMAGE SET ---------- */
-
+// ---------- IMAGE SET ----------
 const plates = Array.from({ length: 37 }, (_, i) => `photos/${i + 1}.png`);
 
+let currentPlate = 0;
+let clickTimer = null;
+
+// ---------- UPDATE IMAGE ----------
+function updatePlate() {
+  overlay.src = plates[currentPlate];
+}
+
+// ---------- INTRO → CAMERA ----------
+onTap(introScreen, async () => {
+  introScreen.style.display = "none";
+  cameraApp.style.display = "block";
+  await startCamera();
+});
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" },
+      audio: false
+    });
+    video.srcObject = stream;
+  } catch (err) {
+    alert("Camera access is needed.");
+  }
+}
+
+// ---------- NAV ----------
+function nextPlate() {
+  currentPlate = (currentPlate + 1) % plates.length;
+  updatePlate();
+}
+
+function prevPlate() {
+  currentPlate = (currentPlate - 1 + plates.length) % plates.length;
+  updatePlate();
+}
+
+onTap(nextButton, nextPlate);
+onTap(prevButton, prevPlate);
+
+// ---------- SWIPE ----------
+let startX = 0;
+
+document.addEventListener("touchstart", (e) => {
+  startX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener("touchend", (e) => {
+  const endX = e.changedTouches[0].screenX;
+  const diff = endX - startX;
+
+  if (diff > 50) prevPlate();
+  if (diff < -50) nextPlate();
+});
+
+// ---------- GALLERY ----------
 function buildGallery() {
   galleryGrid.innerHTML = "";
 
   plates.forEach((src, index) => {
     const img = document.createElement("img");
-
     img.src = src;
     img.className = "gallery-item";
 
@@ -48,12 +94,12 @@ function buildGallery() {
       img.classList.add("active");
     }
 
-    img.addEventListener("click", () => {
+    onTap(img, () => {
       if (clickTimer) {
         clearTimeout(clickTimer);
         clickTimer = null;
 
-        // double click/tap: choose image for camera overlay
+        // double tap → select image
         currentPlate = index;
         updatePlate();
         galleryOverlay.classList.remove("open");
@@ -62,8 +108,7 @@ function buildGallery() {
         clickTimer = setTimeout(() => {
           clickTimer = null;
 
-          // single click/tap: open large preview
-          previewIndex = index;
+          // single tap → preview
           galleryPreviewImg.src = src;
           galleryPreview.classList.add("open");
         }, 250);
@@ -74,92 +119,21 @@ function buildGallery() {
   });
 }
 
-galleryButton.addEventListener("click", () => {
+onTap(galleryButton, () => {
   buildGallery();
   galleryOverlay.classList.add("open");
 });
 
-closeGallery.addEventListener("click", () => {
+onTap(closeGallery, () => {
   galleryOverlay.classList.remove("open");
 });
 
-galleryPreview.addEventListener("click", () => {
+onTap(galleryPreview, () => {
   galleryPreview.classList.remove("open");
 });
 
-let currentPlate = 0;
-
-function updatePlate() {
-  overlay.src = plates[currentPlate];
-}
-
-/* ---------- INTRO → CAMERA ---------- */
-
-introScreen.addEventListener("click", async () => {
-  introScreen.style.display = "none";
-  cameraApp.style.display = "block";
-
-  await startCamera();
-});
-
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false
-    });
-
-    video.srcObject = stream;
-  } catch (error) {
-    console.error("Camera error:", error);
-    alert("Camera access is needed.");
-  }
-}
-
-/* ---------- BUTTON NAVIGATION ---------- */
-
-function nextPlate() {
-  currentPlate++;
-  if (currentPlate >= plates.length) currentPlate = 0;
-  updatePlate();
-}
-
-function prevPlate() {
-  currentPlate--;
-  if (currentPlate < 0) currentPlate = plates.length - 1;
-  updatePlate();
-}
-
-nextButton.addEventListener("click", nextPlate);
-prevButton.addEventListener("click", prevPlate);
-
-/* ---------- SWIPE ---------- */
-
-let touchStartX = 0;
-let touchEndX = 0;
-
-document.addEventListener("touchstart", (e) => {
-  touchStartX = e.changedTouches[0].screenX;
-});
-
-document.addEventListener("touchend", (e) => {
-  touchEndX = e.changedTouches[0].screenX;
-  handleSwipe();
-});
-
-function handleSwipe() {
-  const swipe = touchEndX - touchStartX;
-  const threshold = 50;
-
-  if (swipe > threshold) prevPlate();
-  if (swipe < -threshold) nextPlate();
-}
-
-/* ---------- INITIAL IMAGE ---------- */
-
-overlay.src = plates[0];
-
-captureButton.addEventListener("click", captureImage);
+// ---------- CAPTURE ----------
+onTap(captureButton, captureImage);
 
 function captureImage() {
   const canvas = document.createElement("canvas");
@@ -168,10 +142,8 @@ function captureImage() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
-  // draw camera frame
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0);
 
-  // draw transparent overlay on top
   const img = new Image();
   img.src = overlay.src;
 
@@ -179,58 +151,48 @@ function captureImage() {
     ctx.globalAlpha = 0.78;
     ctx.globalCompositeOperation = "multiply";
 
-    // keeps overlay proportional like object-fit: contain
     const scale = Math.min(
       canvas.width / img.width,
       canvas.height / img.height
     );
 
-    const drawWidth = img.width * scale;
-    const drawHeight = img.height * scale;
+    const w = img.width * scale;
+    const h = img.height * scale;
+    const x = (canvas.width - w) / 2;
+    const y = (canvas.height - h) / 2;
 
-    const x = (canvas.width - drawWidth) / 2;
-    const y = (canvas.height - drawHeight) / 2;
+    ctx.drawImage(img, x, y, w, h);
 
-    ctx.drawImage(img, x, y, drawWidth, drawHeight);
+    const url = canvas.toDataURL("image/png");
 
-    const finalImage = canvas.toDataURL("image/png");
-
-    const link = document.createElement("a");
-    link.href = finalImage;
-    link.download = "xposed-photo.png";
-    link.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "xposed.png";
+    a.click();
   };
 }
 
+// ---------- VIDEO HOLD ----------
+let pressTimer;
+let isRecording = false;
+let mediaRecorder;
+let recordedChunks = [];
+
 captureButton.addEventListener("pointerdown", () => {
-  pressTimer = setTimeout(() => {
-    startRecording();
-  }, 400);
+  pressTimer = setTimeout(startRecording, 400);
 });
 
 captureButton.addEventListener("pointerup", () => {
   clearTimeout(pressTimer);
 
-  if (isRecording) {
-    stopRecording();
-  } else {
-    captureImage();
-  }
-});
-
-captureButton.addEventListener("pointerleave", () => {
-  clearTimeout(pressTimer);
-
-  if (isRecording) {
-    stopRecording();
-  }
+  if (isRecording) stopRecording();
+  else captureImage();
 });
 
 function startRecording() {
   isRecording = true;
-  recordedChunks = [];
-
   captureButton.classList.add("recording");
+  recordedChunks = [];
 
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -238,10 +200,10 @@ function startRecording() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
 
-  function drawFrame() {
+  function draw() {
     if (!isRecording) return;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, 0, 0);
 
     const img = new Image();
     img.src = overlay.src;
@@ -250,50 +212,29 @@ function startRecording() {
       ctx.globalAlpha = 0.78;
       ctx.globalCompositeOperation = "multiply";
 
-      const scale = Math.min(
-        canvas.width / img.width,
-        canvas.height / img.height
-      );
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      const drawWidth = img.width * scale;
-      const drawHeight = img.height * scale;
-      const x = (canvas.width - drawWidth) / 2;
-      const y = (canvas.height - drawHeight) / 2;
-
-      ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-      ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = "source-over";
-
-      requestAnimationFrame(drawFrame);
+      requestAnimationFrame(draw);
     };
   }
 
-  drawFrame();
+  draw();
 
   const stream = canvas.captureStream(30);
+  mediaRecorder = new MediaRecorder(stream);
 
-  mediaRecorder = new MediaRecorder(stream, {
-    mimeType: "video/webm"
-  });
-
-  mediaRecorder.ondataavailable = (event) => {
-    if (event.data.size > 0) {
-      recordedChunks.push(event.data);
-    }
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size) recordedChunks.push(e.data);
   };
 
   mediaRecorder.onstop = () => {
-    const blob = new Blob(recordedChunks, {
-      type: "video/webm"
-    });
-
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "xposed-video.webm";
-    link.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "xposed.webm";
+    a.click();
   };
 
   mediaRecorder.start();
@@ -302,26 +243,20 @@ function startRecording() {
 function stopRecording() {
   isRecording = false;
   captureButton.classList.remove("recording");
-
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
-  }
+  mediaRecorder?.stop();
 }
 
+// ---------- MARQUEE ----------
 const marqueeLeft = document.getElementById("marquee-left");
 const marqueeRight = document.getElementById("marquee-right");
 
-function shuffle(array) {
-  return array.sort(() => Math.random() - 0.5);
+function shuffle(arr) {
+  return arr.sort(() => Math.random() - 0.5);
 }
 
 function buildMarquee() {
-  const shuffled1 = shuffle([...plates]);
-  const shuffled2 = shuffle([...plates]);
-
-  // duplicate so it loops seamlessly
-  const row1 = [...shuffled1, ...shuffled1];
-  const row2 = [...shuffled2, ...shuffled2];
+  const row1 = [...shuffle([...plates]), ...plates];
+  const row2 = [...shuffle([...plates]), ...plates];
 
   row1.forEach((src) => {
     const img = document.createElement("img");
@@ -337,3 +272,6 @@ function buildMarquee() {
 }
 
 buildMarquee();
+
+// ---------- INIT ----------
+overlay.src = plates[0];
